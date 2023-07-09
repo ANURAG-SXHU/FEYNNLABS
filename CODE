@@ -1,0 +1,78 @@
+import pandas as pd
+import numpy as np
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
+# Load the 'mcdonalds' dataset from the 'MSA' package
+mcdonalds = pd.read_csv(r'E:\Workfile\FEYNN LABS\McDonalds Case Study-20230708T170706Z-001\McDonalds Case Study\mcdonalds.csv')
+# Print the column names
+print(mcdonalds.columns)
+
+# Get the dimensions of the dataset
+print(mcdonalds.shape)
+
+# Print the first 3 rows
+print(mcdonalds.head(3))
+# Extract the first 11 columns and convert to a matrix
+MD_x = mcdonalds.iloc[:, 0:11].values
+
+# Convert "Yes" values to 1 and others to 0
+MD_x = (MD_x == "Yes").astype(int)
+
+# Calculate column means and round to 2 decimal places
+col_means = np.round(np.mean(MD_x, axis=0), 2)
+# Print the rounded column means
+columns = mcdonalds.columns[0:11]
+for col, mean in zip(columns, col_means):
+    print(f"{col}: {mean}")
+
+# Perform PCA
+pca = PCA()
+MD_pca = pca.fit_transform(MD_x)
+
+# Print the summary of PCA
+n_components = pca.n_components_
+std_dev = np.round(np.sqrt(pca.explained_variance_), 5)
+prop_var = np.round(pca.explained_variance_ratio_, 5)
+cum_var = np.round(np.cumsum(prop_var), 5)
+
+summary = pd.DataFrame({
+    'Standard deviation': std_dev,
+    'Proportion of Variance': prop_var,
+    'Cumulative Proportion': cum_var
+})
+
+summary.index = ['PC' + str(i+1) for i in range(n_components)]
+print(summary)
+
+# Print the standard deviations
+std_dev = np.round(np.sqrt(pca.explained_variance_), 1)
+print("Standard deviations (1, .., p=11):")
+print(std_dev)
+
+# Print the rotation matrix
+rotation = pca.components_.T
+column_names = mcdonalds.columns[0:11]
+
+print("\nExploring Data", MD_pca.shape[0])
+print("Rotation (n x k) = (11 x 11):")
+for i, col_name in enumerate(column_names):
+    print(col_name, " ".join([f"{x:.3f}" for x in rotation[i]]))
+
+# Plot the projected data and projected axes
+plt.scatter(MD_pca[:, 0], MD_pca[:, 1], color='grey', label='Projected Data')
+plt.xlabel('PC1')
+plt.ylabel('PC2')
+plt.title('Projected Data and Axes')
+
+# Plot the projected axes
+proj_axes = pca.components_.T[:, :2]  # Extract the first two projected axes
+plt.arrow(0, 0, proj_axes[0, 0], proj_axes[1, 0], color='red', width=0.02, head_width=0.1, label='PC1')
+plt.arrow(0, 0, proj_axes[0, 1], proj_axes[1, 1], color='blue', width=0.02, head_width=0.1, label='PC2')
+
+plt.legend()
+plt.show()
+# Compute the frequency table
+like_freq = mcdonalds['Like'].value_counts().sort_index(ascending=False)
+print(like_freq)
+
